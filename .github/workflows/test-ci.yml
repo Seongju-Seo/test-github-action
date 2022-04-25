@@ -7,8 +7,13 @@ on:
     types: [closed]
 
 jobs:
+  pre-build:
+    name: pre build
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo '${{ toJSON(github) }}'
   versioninfo:
-    name: Get verion info
+    name: Get version info
     # merge되었을 때에만 실행되도록 (recursive push 방지)
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
