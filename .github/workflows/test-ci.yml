@@ -97,7 +97,7 @@ jobs:
 
   jira-automation:
     name: Jira Automation
-    if: github.event.pull_request.merged == true
+    if: github.event.pull_request.merged == true && github.ref == 'refs/heads/stage'
     runs-on: ubuntu-latest
     needs: versioninfo
     steps:
