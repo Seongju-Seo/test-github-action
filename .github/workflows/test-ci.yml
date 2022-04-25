@@ -107,6 +107,7 @@ jobs:
             const regexToParseTicketNumber = /(JAT-[0-9]*)/
             const commitMessage = process.env.COMMIT_MESSAGE
             const regexToParseNumber = /[0-9]+/
+            console.log(commitMessage)
             console.log(commitMessage.match(regexToParseNumber))
             const prNumber = Number(commitMessage.match(regexToParseNumber)[0])
             const response = []
