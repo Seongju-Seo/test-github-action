@@ -147,14 +147,14 @@ jobs:
                 data: {
                   issues: tickets,
                   data: {
-                    releaseVersion: process.env.RELEASE_VERSION
+                    releaseVersion: process.env.VERSION
                   }
                 }
               })
             }
         env:
           JIRA_WEBHOOK_URL_TEST: ${{ secrets.JIRA_WEBHOOK_URL_TEST }}
-          RELEASE_VERSION: ${{ needs.build.outputs.version }}
+          VERSION: ${{ needs.versioninfo.outputs.packagejsonVersion }}-release${{ needs.versioninfo.outputs.nextGithubRunNumber }}
           COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
           COMMITS: ${{ github.event.commits }}
 
