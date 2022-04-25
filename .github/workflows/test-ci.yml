@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: echo '${{ toJSON(github) }}'
+
   versioninfo:
     name: Get version info
     # merge되었을 때에만 실행되도록 (recursive push 방지)
@@ -114,6 +115,7 @@ jobs:
             const commitMessage = process.env.COMMIT_MESSAGE
             const regexToParseNumber = /[0-9]+/
             console.log('commits')
+            console.log(github.event.head_commit.message)
             console.log(process.env.JIRA_WEBHOOK_URL_TEST)
             console.log(process.env.VERSION)
             console.log(process.env.COMMITS)
