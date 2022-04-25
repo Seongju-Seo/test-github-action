@@ -108,6 +108,8 @@ jobs:
             const regexToParseTicketNumber = /(JAT-[0-9]*)/
             const commitMessage = process.env.COMMIT_MESSAGE
             const regexToParseNumber = /[0-9]+/
+            console.log('commits')
+            console.log(commits)
             console.log(commitMessage)
             console.log(commitMessage.match(regexToParseNumber))
             const prNumber = Number(commitMessage.match(regexToParseNumber)[0])
@@ -153,7 +155,8 @@ jobs:
         env:
           JIRA_WEBHOOK_URL_STAGE: ${{ secrets.JIRA_WEBHOOK_URL_STAGE }}
           RELEASE_VERSION: ${{ needs.build.outputs.version }}
-          COMMIT_MESSAGE: ${{ github.event.commits[github.event.commits.length - 2].message }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+          COMMITS: ${{ github.event.commits }}
 
   notify-slack:
     name: Notify to slack for Build Result
