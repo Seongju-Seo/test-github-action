@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: echo '${{ toJSON(github) }}'
+
   versioninfo:
     name: Get version info
     # merge되었을 때에만 실행되도록 (recursive push 방지)
