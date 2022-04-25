@@ -9,3 +9,5 @@ console.log('JAT-1, commit-3');
 console.log('test-1 branch');
 
 console.log('test-2 branch');
+
+console.log('test-2 branch 2');
