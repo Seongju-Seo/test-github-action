@@ -61,7 +61,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          token: ${{ secrets.PAT }}
           ref: ${{ github.base_ref }}
       - name: Set current date
         id: variables
