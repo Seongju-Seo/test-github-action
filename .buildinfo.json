@@ -1,5 +1,6 @@
 {
-  "githubRunNumber": "",
-  "githubSha": "",
-  "buildDate": ""
+  "version": "1.0.0",
+  "githubRunNumber": "1",
+  "githubSha": "7bc7ca9ed22df489981bcb04c7d0916630a1dc62",
+  "buildDate": "2022-25-04 19:54:56"
 }
