@@ -8,11 +8,11 @@ on:
     types: [closed]
 
 jobs:
-  pre-build:
-    name: pre build
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo '${{ toJSON(github) }}'
+  # pre-build:
+  #   name: pre build
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - run: echo '${{ toJSON(github) }}'
 
   versioninfo:
     name: Get version info
@@ -32,18 +32,22 @@ jobs:
         with:
           path: ./package.json
 
-      - run: npm version prerelease --preid=release
-
-      - name: increase release number
-        id: releaseNumber
-        run: |
-          npm version prerelease --preid=release
-          echo "::set-output name=releaseNumber::$(( fromJson(steps.packageJson.outputs.content).version.split(".")[3] ))"
-
       - name: print
         run: |
           echo "packagejsonVersion: ${{ fromJson(steps.packageJson.outputs.content).version }}"
-          echo "releaseNumber: ${{ fromJson(steps.releaseNumber.outputs.content).releaseNumber }}"
+
+  increaseVersion:
+    runs-on: ubuntu-latest
+    needs: versioninfo
+    steps:
+      - name: Checkout
+        uses: actions/checkout@master
+
+      - name: 'change version'
+        uses: reedyuk/npm-version@1.1.1
+        with:
+          version: 'prerelease'
+          preid: 'release'
 
   # buildinfo:
   #   name: Generate build info
