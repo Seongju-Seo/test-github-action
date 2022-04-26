@@ -1,9 +1,10 @@
 name: stage-ci
 
 on:
+  push:
+    branches: stage
   pull_request:
-    branches:
-      - stage
+    branches: stage
     types: [closed]
 
 jobs:
@@ -20,9 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       packagejsonVersion: ${{ fromJson(steps.packageJson.outputs.content).version }}
-      buildinfoVersion: ${{ fromJson(steps.buildinfoJson.outputs.content).version }}
-      githubRunNumber: ${{ fromJson(steps.buildinfoJson.outputs.content).githubRunNumber }}
-      nextGithubRunNumber: ${{ steps.nextGithubRunNumber.outputs.nextGithubRunNumber }}
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
@@ -33,30 +32,18 @@ jobs:
         with:
           path: ./package.json
 
-      - name: Read .buildinfo.json
-        id: buildinfoJson
-        uses: juliangruber/read-file-action@v1
-        with:
-          path: ./.buildinfo.json
+      - run: npm version prerelease --preid=release
 
       - name: increase release number
-        id: increaseReleaseNumber
-        env:
-          CURRENT_RUN_NUMBER: ${{ fromJson(steps.buildinfoJson.outputs.content).githubRunNumber }}
+        id: releaseNumber
         run: |
-          echo "::set-output name=increaseReleaseNumber::$(( $CURRENT_RUN_NUMBER + 1 ))"
-
-      - name: get next release number
-        id: nextGithubRunNumber
-        run: |
-          echo "::set-output name=nextGithubRunNumber::${{ (fromJson(steps.packageJson.outputs.content).version != fromJson(steps.buildinfoJson.outputs.content).version) && '1' || steps.increaseReleaseNumber.outputs.increaseReleaseNumber }}"
+          npm version prerelease --preid=release
+          echo "::set-output name=releaseNumber::$(( fromJson(steps.packageJson.outputs.content).version.split(".")[3] ))"
 
       - name: print
         run: |
           echo "packagejsonVersion: ${{ fromJson(steps.packageJson.outputs.content).version }}"
-          echo "buildinfoVersion: ${{ fromJson(steps.buildinfoJson.outputs.content).version }}"
-          echo "githubRunNumber: ${{ fromJson(steps.buildinfoJson.outputs.content).githubRunNumber }}"
-          echo "nextGithubRunNumber: ${{ steps.nextGithubRunNumber.outputs.nextGithubRunNumber }}"
+          echo "releaseNumber: ${{ fromJson(steps.releaseNumber.outputs.content).releaseNumber }}"
 
   # buildinfo:
   #   name: Generate build info
