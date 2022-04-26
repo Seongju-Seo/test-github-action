@@ -59,7 +59,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          token: ${{ secrets.PAT }}
+          # token: ${{ secrets.PAT }}
           ref: ${{ github.base_ref }}
       - name: Set current date
         id: variables
@@ -166,7 +166,7 @@ jobs:
 
   notify-slack:
     name: Notify to slack for Build Result
-    if: github.event.pull_request.merged == true
+    if: always() && github.event_name == 'push'
     runs-on: ubuntu-latest
     needs: versioninfo
     steps:
