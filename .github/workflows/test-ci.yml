@@ -3,25 +3,18 @@ name: stage-ci
 on:
   push:
     branches: stage
-  pull_request:
-    branches: stage
-    types: [closed]
 
 jobs:
-  # pre-build:
-  #   name: pre build
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - run: echo '${{ toJSON(github) }}'
-
   versioninfo:
     name: Get version info
     # merge되었을 때에만 실행되도록 (recursive push 방지)
-    if: github.event_name == 'push' && github.ref == 'refs/heads/stage'
+    if: always() && github.event_name == 'push'
     runs-on: ubuntu-latest
     outputs:
       packagejsonVersion: ${{ fromJson(steps.packageJson.outputs.content).version }}
-
+      buildinfoVersion: ${{ fromJson(steps.buildinfoJson.outputs.content).version }}
+      githubRunNumber: ${{ fromJson(steps.buildinfoJson.outputs.content).githubRunNumber }}
+      nextGithubRunNumber: ${{ steps.nextGithubRunNumber.outputs.nextGithubRunNumber }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
@@ -32,89 +25,105 @@ jobs:
         with:
           path: ./package.json
 
+      - name: Read .buildinfo.json
+        id: buildinfoJson
+        uses: juliangruber/read-file-action@v1
+        with:
+          path: ./.buildinfo.json
+
+      - name: increase release number
+        id: increaseReleaseNumber
+        env:
+          CURRENT_RUN_NUMBER: ${{ fromJson(steps.buildinfoJson.outputs.content).githubRunNumber }}
+        run: |
+          echo "::set-output name=increaseReleaseNumber::$(( $CURRENT_RUN_NUMBER + 1 ))"
+
+      - name: get next release number
+        id: nextGithubRunNumber
+        run: |
+          echo "::set-output name=nextGithubRunNumber::${{ (fromJson(steps.packageJson.outputs.content).version != fromJson(steps.buildinfoJson.outputs.content).version) && '1' || steps.increaseReleaseNumber.outputs.increaseReleaseNumber }}"
+
       - name: print
         run: |
           echo "packagejsonVersion: ${{ fromJson(steps.packageJson.outputs.content).version }}"
+          echo "buildinfoVersion: ${{ fromJson(steps.buildinfoJson.outputs.content).version }}"
+          echo "githubRunNumber: ${{ fromJson(steps.buildinfoJson.outputs.content).githubRunNumber }}"
+          echo "nextGithubRunNumber: ${{ steps.nextGithubRunNumber.outputs.nextGithubRunNumber }}"
 
-  increaseVersion:
+  buildinfo:
+    name: Generate build info
+    # merge되었을 때에만 실행되도록 (recursive push 방지)
+    if: always() && github.event_name == 'push'
     runs-on: ubuntu-latest
     needs: versioninfo
     steps:
-      - name: Checkout
-        uses: actions/checkout@master
-
-      - name: 'change version'
-        uses: reedyuk/npm-version@1.1.1
+      - uses: actions/checkout@v2
         with:
-          version: 'prerelease'
-          package: 'test-github-action/'
+          token: ${{ secrets.PAT }}
+          ref: ${{ github.base_ref }}
+      - name: Set current date
+        id: variables
+        run: echo "::set-output name=now::$(date +'%Y-%d-%m %T')"
+      - name: generate buildinfo file
+        run: |
+          rm .buildinfo.json
+          echo "{"                                                                                    >> .buildinfo.json
+          echo "  \"version\": \"${{ needs.versioninfo.outputs.packagejsonVersion }}\","              >> .buildinfo.json
+          echo "  \"githubRunNumber\": \"${{ needs.versioninfo.outputs.nextGithubRunNumber }}\","     >> .buildinfo.json
+          echo "  \"githubSha\": \"${{ github.sha }}\","                                              >> .buildinfo.json
+          echo "  \"buildDate\": \"${{ steps.variables.outputs.now }}\""                              >> .buildinfo.json
+          echo "}"                                                                                    >> .buildinfo.json
+      - uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          branch: ${{ github.base_ref }}
+          commit_message: 'build: generate .buildinfo.json (auto-commit)'
 
-  # buildinfo:
-  #   name: Generate build info
-  #   # merge되었을 때에만 실행되도록 (recursive push 방지)
-  #   if: github.event.pull_request.merged == true
-  #   runs-on: ubuntu-latest
-  #   needs: versioninfo
-  #   steps:
-  #     - uses: actions/checkout@v2
-  #       with:
-  #         ref: ${{ github.base_ref }}
-  #     - name: Set current date
-  #       id: variables
-  #       run: echo "::set-output name=now::$(date +'%Y-%d-%m %T')"
-  #     - name: generate buildinfo file
-  #       run: |
-  #         rm .buildinfo.json
-  #         echo "{"                                                                                    >> .buildinfo.json
-  #         echo "  \"version\": \"${{ needs.versioninfo.outputs.packagejsonVersion }}\","              >> .buildinfo.json
-  #         echo "  \"githubRunNumber\": \"${{ needs.versioninfo.outputs.nextGithubRunNumber }}\","     >> .buildinfo.json
-  #         echo "  \"githubSha\": \"${{ github.sha }}\","                                              >> .buildinfo.json
-  #         echo "  \"buildDate\": \"${{ steps.variables.outputs.now }}\""                              >> .buildinfo.json
-  #         echo "}"                                                                                    >> .buildinfo.json
-  #     - uses: stefanzweifel/git-auto-commit-action@v4
-  #       with:
-  #         branch: ${{ github.base_ref }}
-  #         commit_message: 'build: generate .buildinfo.json (auto-commit)'
-
-  # deploy:
-  #   name: Build and deploy
-  #   # merge되었을 때에만 실행되도록 (recursive push 방지)
-  #   if: github.event.pull_request.merged == true
-  #   runs-on: ubuntu-latest
-  #   needs: buildinfo
-  #   steps:
-  #     - name: build and deploy with vercel hook
-  #       run: curl -X POST https://api.vercel.com/v1/integrations/deploy/prj_rHpQKriYvxAiDJ9EJgGfetUAiYUO/ajE620kwKn
+  deploy:
+    name: Build and deploy
+    # merge되었을 때에만 실행되도록 (recursive push 방지)
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    needs: buildinfo
+    steps:
+      - name: build and deploy with vercel hook
+        run: curl -X POST https://api.vercel.com/v1/integrations/deploy/prj_rHpQKriYvxAiDJ9EJgGfetUAiYUO/ajE620kwKn
 
   jira-automation:
     name: Jira Automation
-    if: github.event_name == 'push' && github.ref == 'refs/heads/stage'
+    if: always() && github.event_name == 'push'
     runs-on: ubuntu-latest
-    needs: versioninfo
+    needs: [versioninfo, buildinfo]
     steps:
       - uses: actions/setup-node@v2
         with:
           node-version: 14
       - run: npm install axios
+      # - name: Check Merge method (Devel)
+      #   uses: actions/github-script@v5.0.0
+      #   if: always() && github.ref == 'refs/heads/devel'
+      #   id: check-merge-method
+      #   with:
+      #     result-encoding: string
+      #     script: |
+      #       const commitMessage = process.env.COMMIT_MESSAGE
+      #       const regexToCheckIsMergedByCommit = /Merge pull request/
+      #       const isMergedByCommit = !!commitMessage.match(regexToCheckIsMergedByCommit)
+      #       return isMergedByCommit ? "commit" : "rebase"
+      #   env:
+      #     COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
       - name: Trigger Jira Automation Webhook (Stage)
         if: github.ref == 'refs/heads/stage'
         uses: actions/github-script@v5.0.0
         with:
           script: |
             const axios = require('axios');
-            const regexToParseTicketNumber = /(JAT-[0-9]*)/;
-            const commitMessage = process.env.COMMIT_MESSAGE;
-            const regexToParseNumber = /[0-9]+/;
-            console.log('commits');
-            console.log(process.env.JIRA_WEBHOOK_URL_TEST);
-            console.log(process.env.VERSION);
-            console.log(process.env.COMMITS);
-            console.log(commitMessage);
-            console.log(commitMessage.match(regexToParseNumber));
-            const prNumber = Number(commitMessage.match(regexToParseNumber)[0]);
-            const response = [];
-            let tickets = [];
-            let page = 1;
+            const regexToParseTicketNumber = /(JAT-[0-9]*)/
+            const commitMessage = process.env.COMMIT_MESSAGE
+            const regexToParseNumber = /[0-9]+/
+            const prNumber = Number(commitMessage.match(regexToParseNumber)[0])
+            const response = []
+            let tickets = []
+            let page = 1
             while(true) {
               const { data } = await github.rest.pulls.listCommits({
                   owner: context.repo.owner,
@@ -132,7 +141,6 @@ jobs:
             }
             response.forEach((elem) => {
               const ticket = elem.commit.message.match(regexToParseTicketNumber)
-              console.log(ticket)
               if (ticket) {
                 tickets.push(ticket[0]);
               }
@@ -146,22 +154,21 @@ jobs:
                 data: {
                   issues: tickets,
                   data: {
-                    releaseVersion: process.env.VERSION
+                    releaseVersion: process.env.RELEASE_VERSION
                   }
                 }
               })
             }
         env:
           JIRA_WEBHOOK_URL_TEST: ${{ secrets.JIRA_WEBHOOK_URL_TEST }}
-          VERSION: ${{ needs.versioninfo.outputs.packagejsonVersion }}-release${{ needs.versioninfo.outputs.nextGithubRunNumber }}
+          RELEASE_VERSION: ${{ needs.versioninfo.outputs.packagejsonVersion }}-release${{ needs.versioninfo.outputs.nextGithubRunNumber }}
           COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
-          COMMITS: ${{ github.event.commits }}
 
   notify-slack:
     name: Notify to slack for Build Result
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
-    needs: jira-automation
+    needs: versioninfo
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
@@ -175,7 +182,7 @@ jobs:
             {
               attachments: [{
                 text: `:spin_kemi: Kemi-Playground Frontend Stage Deploy Success :spin_kemi: \n Version: ${{ env.VERSION }} \n by ${process.env.AS_AUTHOR}
-                \n\n<https://wiredcompany.atlassian.net/issues/?jql=labels%20in%20(%EC%BC%80%EB%AF%B8%ED%94%8C%EB%A0%88%EC%9D%B4%EA%B7%B8%EB%9D%BC%EC%9A%B4%EB%93%9C%2C%20%EC%BC%80%EB%AF%B8)%20AND%20%22%EB%B0%98%EC%98%81%20%EB%B2%84%EC%A0%84%20(QA%EC%84%9C%EB%B2%84)%22%20%3D%20${{ env.VERSION }}|Changed Jira Ticket List>
+                \n<https://wiredcompany.atlassian.net/issues/?jql=labels%20in%20(%EC%BC%80%EB%AF%B8%ED%94%8C%EB%A0%88%EC%9D%B4%EA%B7%B8%EB%9D%BC%EC%9A%B4%EB%93%9C%2C%20%EC%BC%80%EB%AF%B8)%20AND%20%22%EB%B0%98%EC%98%81%20%EB%B2%84%EC%A0%84%20(QA%EC%84%9C%EB%B2%84)%22%20%3D%20${{ env.VERSION }}|Changed Jira Ticket List>`
                 \n<https://wiredcompany.atlassian.net/issues/?jql=project%20%3D%20KP%20AND%20status%20%3D%20%22DEVEL%20RELEASED%22|Cards with Devel-Released status>`
               }]
             }
