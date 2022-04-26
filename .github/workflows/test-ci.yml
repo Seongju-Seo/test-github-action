@@ -88,6 +88,7 @@ jobs:
 
   jira-automation:
     name: Jira Automation
+    if: github.event_name == 'push' && github.ref == 'refs/heads/stage'
     runs-on: ubuntu-latest
     needs: versioninfo
     steps:
@@ -105,7 +106,6 @@ jobs:
             const commitMessage = process.env.COMMIT_MESSAGE;
             const regexToParseNumber = /[0-9]+/;
             console.log('commits');
-            console.log(${{github.event}});
             console.log(process.env.JIRA_WEBHOOK_URL_TEST);
             console.log(process.env.VERSION);
             console.log(process.env.COMMITS);
