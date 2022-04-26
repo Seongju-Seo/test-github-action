@@ -97,7 +97,7 @@ jobs:
 
   jira-automation:
     name: Jira Automation
-    if: github.ref == 'refs/heads/stage'
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     needs: versioninfo
     steps:
@@ -110,21 +110,22 @@ jobs:
         uses: actions/github-script@v5.0.0
         with:
           script: |
+            console.log(github.event);
             const axios = require('axios');
-            const regexToParseTicketNumber = /(JAT-[0-9]*)/
-            const commitMessage = process.env.COMMIT_MESSAGE
-            const regexToParseNumber = /[0-9]+/
-            console.log('commits')
-            console.log(github.event.head_commit.message)
-            console.log(process.env.JIRA_WEBHOOK_URL_TEST)
-            console.log(process.env.VERSION)
-            console.log(process.env.COMMITS)
-            console.log(commitMessage)
-            console.log(commitMessage.match(regexToParseNumber))
-            const prNumber = Number(commitMessage.match(regexToParseNumber)[0])
-            const response = []
-            let tickets = []
-            let page = 1
+            const regexToParseTicketNumber = /(JAT-[0-9]*)/;
+            const commitMessage = process.env.COMMIT_MESSAGE;
+            const regexToParseNumber = /[0-9]+/;
+            console.log('commits');
+            console.log(github.event.head_commit.message);
+            console.log(process.env.JIRA_WEBHOOK_URL_TEST);
+            console.log(process.env.VERSION);
+            console.log(process.env.COMMITS);
+            console.log(commitMessage);
+            console.log(commitMessage.match(regexToParseNumber));
+            const prNumber = Number(commitMessage.match(regexToParseNumber)[0]);
+            const response = [];
+            let tickets = [];
+            let page = 1;
             while(true) {
               const { data } = await github.rest.pulls.listCommits({
                   owner: context.repo.owner,
