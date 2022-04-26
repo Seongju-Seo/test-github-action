@@ -182,7 +182,7 @@ jobs:
             {
               attachments: [{
                 text: `:spin_kemi: Kemi-Playground Frontend Stage Deploy Success :spin_kemi: \n Version: ${{ env.VERSION }} \n by ${process.env.AS_AUTHOR}
-                \n<https://wiredcompany.atlassian.net/issues/?jql=labels%20in%20(%EC%BC%80%EB%AF%B8%ED%94%8C%EB%A0%88%EC%9D%B4%EA%B7%B8%EB%9D%BC%EC%9A%B4%EB%93%9C%2C%20%EC%BC%80%EB%AF%B8)%20AND%20%22%EB%B0%98%EC%98%81%20%EB%B2%84%EC%A0%84%20(QA%EC%84%9C%EB%B2%84)%22%20%3D%20${{ env.VERSION }}|Changed Jira Ticket List>`
+                \n<https://wiredcompany.atlassian.net/issues/?jql=labels%20in%20(%EC%BC%80%EB%AF%B8%ED%94%8C%EB%A0%88%EC%9D%B4%EA%B7%B8%EB%9D%BC%EC%9A%B4%EB%93%9C%2C%20%EC%BC%80%EB%AF%B8)%20AND%20%22%EB%B0%98%EC%98%81%20%EB%B2%84%EC%A0%84%20(QA%EC%84%9C%EB%B2%84)%22%20%3D%20${{ env.VERSION }}|Changed Jira Ticket List>
                 \n<https://wiredcompany.atlassian.net/issues/?jql=project%20%3D%20KP%20AND%20status%20%3D%20%22DEVEL%20RELEASED%22|Cards with Devel-Released status>`
               }]
             }
