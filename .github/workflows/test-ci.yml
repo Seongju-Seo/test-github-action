@@ -42,6 +42,11 @@ jobs:
       #     echo "::set-output name=increaseReleaseNumber::$(( $CURRENT_RUN_NUMBER + 1 ))"
       #     npm version prerelease --preid=release
 
+      - name: setup git config
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "<>"
+
       - name: increase release number
         id: increaseReleaseNumber
         run: |
