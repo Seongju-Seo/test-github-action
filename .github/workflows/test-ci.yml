@@ -156,6 +156,7 @@ jobs:
               }
             });
             tickets = [...new Set(tickets)]
+            console.log(process.env.RELEASE_VERSION)
             if (!!tickets.length) {
               axios({
                 url: process.env.JIRA_WEBHOOK_URL_TEST,
