@@ -61,7 +61,7 @@ jobs:
       - name: commit released version
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
-          branch: ${{ github.base_ref }}
+          branch: stage
           commit_message: 'increase release number (auto-commit)'
 
       # - name: get next release number
