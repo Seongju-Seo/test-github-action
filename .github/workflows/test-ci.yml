@@ -12,9 +12,9 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       packagejsonVersion: ${{ fromJson(steps.packageJson.outputs.content).version }}
-      buildinfoVersion: ${{ fromJson(steps.buildinfoJson.outputs.content).version }}
-      githubRunNumber: ${{ fromJson(steps.buildinfoJson.outputs.content).githubRunNumber }}
-      nextGithubRunNumber: ${{ steps.nextGithubRunNumber.outputs.nextGithubRunNumber }}
+      # buildinfoVersion: ${{ fromJson(steps.buildinfoJson.outputs.content).version }}
+      # githubRunNumber: ${{ fromJson(steps.buildinfoJson.outputs.content).githubRunNumber }}
+      # nextGithubRunNumber: ${{ steps.nextGithubRunNumber.outputs.nextGithubRunNumber }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
