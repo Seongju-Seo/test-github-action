@@ -71,7 +71,7 @@ jobs:
 
       - name: print
         run: |
-          echo "packagejsonVersion: ${{ fromJson(steps.packageJson.outputs.content).version }}
+          echo "packagejsonVersion: ${{ fromJson(steps.packageJson.outputs.content).version }}"
 
   # buildinfo:
   #   name: Generate build info
@@ -171,7 +171,7 @@ jobs:
             }
         env:
           JIRA_WEBHOOK_URL_TEST: ${{ secrets.JIRA_WEBHOOK_URL_TEST }}
-          RELEASE_VERSION: ${{ needs.versioninfo.outputs.packagejsonVersion }}-release${{ needs.versioninfo.outputs.nextGithubRunNumber }}
+          RELEASE_VERSION: ${{ needs.versioninfo.outputs.packagejsonVersion }}
           COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
 
   notify-slack:
