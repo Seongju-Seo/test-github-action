@@ -10,47 +10,14 @@ jobs:
     # merge되었을 때에만 실행되도록 (recursive push 방지)
     if: always() && github.event_name == 'push'
     runs-on: ubuntu-latest
-    # strategy:
-    #   matrix:
-    #     node-version: [14.x]
     outputs:
       packagejsonVersion: ${{ fromJson(steps.packageJson.outputs.content).version }}
-      # buildinfoVersion: ${{ fromJson(steps.buildinfoJson.outputs.content).version }}
-      # githubRunNumber: ${{ fromJson(steps.buildinfoJson.outputs.content).githubRunNumber }}
-      # nextGithubRunNumber: ${{ steps.nextGithubRunNumber.outputs.nextGithubRunNumber }}
+      buildinfoVersion: ${{ fromJson(steps.buildinfoJson.outputs.content).version }}
+      githubRunNumber: ${{ fromJson(steps.buildinfoJson.outputs.content).githubRunNumber }}
+      nextGithubRunNumber: ${{ steps.nextGithubRunNumber.outputs.nextGithubRunNumber }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
-
-      # - name: Use Node.js ${{ matrix.node-version }}
-      #   uses: actions/setup-node@v2
-      #   with:
-      #     node-version: ${{ matrix.node-version }}
-      #     cache: 'npm'
-
-      # - name: Read .buildinfo.json
-      #   id: buildinfoJson
-      #   uses: juliangruber/read-file-action@v1
-      #   with:
-      #     path: ./.buildinfo.json
-
-      # - name: increase release number
-      #   id: increaseReleaseNumber
-      #   env:
-      #     CURRENT_RUN_NUMBER: ${{ fromJson(steps.buildinfoJson.outputs.content).githubRunNumber }}
-      #   run: |
-      #     echo "::set-output name=increaseReleaseNumber::$(( $CURRENT_RUN_NUMBER + 1 ))"
-      #     npm version prerelease --preid=release
-
-      - name: setup git config
-        run: |
-          git config user.name "GitHub Actions Bot"
-          git config user.email "<>"
-
-      - name: increase release number
-        id: increaseReleaseNumber
-        run: |
-          npm version prerelease --preid=release
 
       - name: Read package.json
         id: packageJson
@@ -58,58 +25,68 @@ jobs:
         with:
           path: ./package.json
 
-      - name: commit released version
-        uses: stefanzweifel/git-auto-commit-action@v4
+      - name: Read .buildinfo.json
+        id: buildinfoJson
+        uses: juliangruber/read-file-action@v1
         with:
-          branch: stage
-          commit_message: 'increase release number (auto-commit)'
+          path: ./.buildinfo.json
 
-      # - name: get next release number
-      #   id: nextGithubRunNumber
-      #   run: |
-      #     echo "::set-output name=nextGithubRunNumber::${{ (fromJson(steps.packageJson.outputs.content).version != fromJson(steps.buildinfoJson.outputs.content).version) && '1' || steps.increaseReleaseNumber.outputs.increaseReleaseNumber }}"
+      - name: increase release number
+        id: increaseReleaseNumber
+        env:
+          CURRENT_RUN_NUMBER: ${{ fromJson(steps.buildinfoJson.outputs.content).githubRunNumber }}
+        run: |
+          echo "::set-output name=increaseReleaseNumber::$(( $CURRENT_RUN_NUMBER + 1 ))"
+
+      - name: get next release number
+        id: nextGithubRunNumber
+        run: |
+          echo "::set-output name=nextGithubRunNumber::${{ (fromJson(steps.packageJson.outputs.content).version != fromJson(steps.buildinfoJson.outputs.content).version) && '1' || steps.increaseReleaseNumber.outputs.increaseReleaseNumber }}"
 
       - name: print
         run: |
           echo "packagejsonVersion: ${{ fromJson(steps.packageJson.outputs.content).version }}"
+          echo "buildinfoVersion: ${{ fromJson(steps.buildinfoJson.outputs.content).version }}"
+          echo "githubRunNumber: ${{ fromJson(steps.buildinfoJson.outputs.content).githubRunNumber }}"
+          echo "nextGithubRunNumber: ${{ steps.nextGithubRunNumber.outputs.nextGithubRunNumber }}"
 
-  # buildinfo:
-  #   name: Generate build info
-  #   # merge되었을 때에만 실행되도록 (recursive push 방지)
-  #   if: always() && github.event_name == 'push'
-  #   runs-on: ubuntu-latest
-  #   needs: versioninfo
-  #   steps:
-  #     - uses: actions/checkout@v2
-  #       with:
-  #         # token: ${{ secrets.PAT }}
-  #         ref: ${{ github.base_ref }}
-  #     - name: Set current date
-  #       id: variables
-  #       run: echo "::set-output name=now::$(date +'%Y-%d-%m %T')"
-  #     - name: generate buildinfo file
-  #       run: |
-  #         rm .buildinfo.json
-  #         echo "{"                                                                                    >> .buildinfo.json
-  #         echo "  \"version\": \"${{ needs.versioninfo.outputs.packagejsonVersion }}\","              >> .buildinfo.json
-  #         echo "  \"githubRunNumber\": \"${{ needs.versioninfo.outputs.nextGithubRunNumber }}\","     >> .buildinfo.json
-  #         echo "  \"githubSha\": \"${{ github.sha }}\","                                              >> .buildinfo.json
-  #         echo "  \"buildDate\": \"${{ steps.variables.outputs.now }}\""                              >> .buildinfo.json
-  #         echo "}"                                                                                    >> .buildinfo.json
-  #     - uses: stefanzweifel/git-auto-commit-action@v4
-  #       with:
-  #         branch: ${{ github.base_ref }}
-  #         commit_message: 'build: generate .buildinfo.json (auto-commit)'
+  buildinfo:
+    name: Generate build info
+    # merge되었을 때에만 실행되도록 (recursive push 방지)
+    if: always() && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    needs: versioninfo
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.PAT }}
+          ref: ${{ github.base_ref }}
+      - name: Set current date
+        id: variables
+        run: echo "::set-output name=now::$(date +'%Y-%d-%m %T')"
+      - name: generate buildinfo file
+        run: |
+          rm .buildinfo.json
+          echo "{"                                                                                    >> .buildinfo.json
+          echo "  \"version\": \"${{ needs.versioninfo.outputs.packagejsonVersion }}\","              >> .buildinfo.json
+          echo "  \"githubRunNumber\": \"${{ needs.versioninfo.outputs.nextGithubRunNumber }}\","     >> .buildinfo.json
+          echo "  \"githubSha\": \"${{ github.sha }}\","                                              >> .buildinfo.json
+          echo "  \"buildDate\": \"${{ steps.variables.outputs.now }}\""                              >> .buildinfo.json
+          echo "}"                                                                                    >> .buildinfo.json
+      - uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          branch: ${{ github.base_ref }}
+          commit_message: 'build: generate .buildinfo.json (auto-commit)'
 
-  # deploy:
-  #   name: Build and deploy
-  #   # merge되었을 때에만 실행되도록 (recursive push 방지)
-  #   if: always() && github.event_name == 'push'
-  #   runs-on: ubuntu-latest
-  #   needs: buildinfo
-  #   steps:
-  #     - name: build and deploy with vercel hook
-  #       run: curl -X POST https://api.vercel.com/v1/integrations/deploy/prj_rHpQKriYvxAiDJ9EJgGfetUAiYUO/ajE620kwKn
+  deploy:
+    name: Build and deploy
+    # merge되었을 때에만 실행되도록 (recursive push 방지)
+    if: always() && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    needs: buildinfo
+    steps:
+      - name: build and deploy with vercel hook
+        run: curl -X POST https://api.vercel.com/v1/integrations/deploy/prj_rHpQKriYvxAiDJ9EJgGfetUAiYUO/ajE620kwKn
 
   jira-automation:
     name: Jira Automation
@@ -156,7 +133,6 @@ jobs:
               }
             });
             tickets = [...new Set(tickets)]
-            console.log(process.env.RELEASE_VERSION)
             if (!!tickets.length) {
               axios({
                 url: process.env.JIRA_WEBHOOK_URL_TEST,
@@ -172,7 +148,7 @@ jobs:
             }
         env:
           JIRA_WEBHOOK_URL_TEST: ${{ secrets.JIRA_WEBHOOK_URL_TEST }}
-          RELEASE_VERSION: ${{ needs.versioninfo.outputs.packagejsonVersion }}
+          RELEASE_VERSION: ${{ needs.versioninfo.outputs.packagejsonVersion }}-release${{ needs.versioninfo.outputs.nextGithubRunNumber }}
           COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
 
   notify-slack:
