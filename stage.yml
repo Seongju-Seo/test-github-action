@@ -15,6 +15,9 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.PAT_TEST }}
+          ref: ${{ github.base_ref }}
 
       - name: setup git config
         run: |
