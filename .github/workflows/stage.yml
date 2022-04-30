@@ -8,7 +8,7 @@ jobs:
   versioninfo:
     name: Change version and output
     # merge되었을 때에만 실행되도록 (recursive push 방지)
-    if: github.event_name == 'push' && ${{ !contains(github.event.head_commit.message, 'auto-commit'}}
+    if: github.event_name == 'push' && ${{ !contains(github.event.head_commit.message, 'auto-commit') }}
     runs-on: ubuntu-latest
     outputs:
       packagejsonVersion: ${{ fromJson(steps.packageJson.outputs.content).version }}
