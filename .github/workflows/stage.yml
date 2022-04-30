@@ -45,7 +45,7 @@ jobs:
       - name: print
         run: |
           echo "packagejsonVersion: ${{ fromJson(steps.packageJson.outputs.content).version }}"
-          echo "github: ${{ github.event }}"
+          echo "github: ${{ fromJson(github.event.commit[0]) }}"
 
   # buildinfo:
   #   name: Generate build info
