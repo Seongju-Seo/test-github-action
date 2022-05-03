@@ -46,6 +46,7 @@ jobs:
         run: |
           echo "packagejsonVersion: ${{ fromJson(steps.packageJson.outputs.content).version }}"
           echo "github: ${{ github.event.head_commit.message }}"
+          echo "${{ !contains(github.event.head_commit.message, 'release') }}"
 
   # buildinfo:
   #   name: Generate build info
