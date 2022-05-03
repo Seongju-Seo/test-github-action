@@ -18,7 +18,7 @@ jobs:
         with:
           token: ${{ secrets.PAT_TEST }}
           ref: ${{ github.base_ref }}
-e
+
       - name: setup git config
         run: |
           git config user.name "GitHub Actions Bot"
