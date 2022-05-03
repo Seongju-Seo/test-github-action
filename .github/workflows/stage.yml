@@ -8,7 +8,7 @@ jobs:
   versioninfo:
     name: Change version and output
     # merge되었을 때에만 실행되도록 (recursive push 방지)
-    if: github.event_name == 'push' && ${{ !contains(github.event.head_commit.message, 'auto-commit') }}
+    if: github.event_name == 'push' && ${{ !contains(github.event.head_commit.message, 'release') }}
     runs-on: ubuntu-latest
     outputs:
       packagejsonVersion: ${{ fromJson(steps.packageJson.outputs.content).version }}
@@ -18,7 +18,7 @@ jobs:
         with:
           token: ${{ secrets.PAT_TEST }}
           ref: ${{ github.base_ref }}
-
+e
       - name: setup git config
         run: |
           git config user.name "GitHub Actions Bot"
@@ -28,7 +28,7 @@ jobs:
         id: increaseReleaseNumber
         run: |
           npm version prerelease --preid=release
-          git add .
+          git push origin stage
 
       - name: Read package.json
         id: packageJson
@@ -36,11 +36,11 @@ jobs:
         with:
           path: ./package.json
 
-      - name: commit released version
-        uses: stefanzweifel/git-auto-commit-action@v4
-        with:
-          branch: stage
-          commit_message: 'increase release number (auto-commit)'
+      # - name: commit released version
+      #   uses: stefanzweifel/git-auto-commit-action@v4
+      #   with:
+      #     branch: stage
+      #     commit_message: 'increase release number (auto-commit)'
 
       - name: print
         run: |
