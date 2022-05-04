@@ -51,9 +51,8 @@ jobs:
 
   jira-automation:
     name: Jira Automation
-    if: always() && github.event_name == 'push'
+    if: github.event_name == 'push' && startsWith(github.event.head_commit.message, '[AUTO_COMMIT] ')
     runs-on: ubuntu-latest
-    needs: versioninfo
     steps:
       - uses: actions/setup-node@v2
         with:
@@ -114,9 +113,8 @@ jobs:
 
   notify-slack:
     name: Notify to slack for Build Result
-    if: always() && github.event_name == 'push'
+    if: github.event_name == 'push' && startsWith(github.event.head_commit.message, '[AUTO_COMMIT] ')
     runs-on: ubuntu-latest
-    needs: versioninfo
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
