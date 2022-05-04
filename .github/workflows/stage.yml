@@ -51,8 +51,9 @@ jobs:
 
   jira-automation:
     name: Jira Automation
-    if: github.event_name == 'push' && startsWith(github.event.head_commit.message, '[AUTO_COMMIT] ')
+    if: github.event_name == 'push' && !startsWith(github.event.head_commit.message, '[AUTO_COMMIT] ')
     runs-on: ubuntu-latest
+    needs: versioninfo
     steps:
       - uses: actions/setup-node@v2
         with:
@@ -111,27 +112,28 @@ jobs:
           RELEASE_VERSION: ${{ needs.versioninfo.outputs.packagejsonVersion }}
           COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
 
-  notify-slack:
-    name: Notify to slack for Build Result
-    if: github.event_name == 'push' && startsWith(github.event.head_commit.message, '[AUTO_COMMIT] ')
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v2
+  # notify-slack:
+  #   name: Notify to slack for Build Result
+  #   if: always() && github.event_name == 'push'
+  #   runs-on: ubuntu-latest
+  #   needs: versioninfo
+  #   steps:
+  #     - name: Checkout Repository
+  #       uses: actions/checkout@v2
 
-      - name: Release Slack Alert (Stage)
-        uses: 8398a7/action-slack@v3
-        with:
-          status: custom
-          fields: repo,message,commit,author,action,ref,workflow # selectable (default: repo,message)
-          custom_payload: |
-            {
-              attachments: [{
-                text: `:spin_kemi: Kemi-Playground Frontend Stage Deploy Success :spin_kemi: \n Version: ${{ env.VERSION }} \n by ${process.env.AS_AUTHOR}
-                \n<https://wiredcompany.atlassian.net/issues/?jql=labels%20in%20(%EC%BC%80%EB%AF%B8%ED%94%8C%EB%A0%88%EC%9D%B4%EA%B7%B8%EB%9D%BC%EC%9A%B4%EB%93%9C%2C%20%EC%BC%80%EB%AF%B8)%20AND%20%22%EB%B0%98%EC%98%81%20%EB%B2%84%EC%A0%84%20(QA%EC%84%9C%EB%B2%84)%22%20%3D%20${{ env.VERSION }}|Changed Jira Ticket List>
-                \t<https://wiredcompany.atlassian.net/issues/?jql=project%20%3D%20KP%20AND%20status%20%3D%20%22DEVEL%20RELEASED%22|Cards with Devel-Released status>`
-              }]
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL_TEST }}
-          VERSION: ${{ needs.versioninfo.outputs.packagejsonVersion }}-release${{ needs.versioninfo.outputs.nextGithubRunNumber }}
+  #     - name: Release Slack Alert (Stage)
+  #       uses: 8398a7/action-slack@v3
+  #       with:
+  #         status: custom
+  #         fields: repo,message,commit,author,action,ref,workflow # selectable (default: repo,message)
+  #         custom_payload: |
+  #           {
+  #             attachments: [{
+  #               text: `:spin_kemi: Kemi-Playground Frontend Stage Deploy Success :spin_kemi: \n Version: ${{ env.VERSION }} \n by ${process.env.AS_AUTHOR}
+  #               \n<https://wiredcompany.atlassian.net/issues/?jql=labels%20in%20(%EC%BC%80%EB%AF%B8%ED%94%8C%EB%A0%88%EC%9D%B4%EA%B7%B8%EB%9D%BC%EC%9A%B4%EB%93%9C%2C%20%EC%BC%80%EB%AF%B8)%20AND%20%22%EB%B0%98%EC%98%81%20%EB%B2%84%EC%A0%84%20(QA%EC%84%9C%EB%B2%84)%22%20%3D%20${{ env.VERSION }}|Changed Jira Ticket List>
+  #               \t<https://wiredcompany.atlassian.net/issues/?jql=project%20%3D%20KP%20AND%20status%20%3D%20%22DEVEL%20RELEASED%22|Cards with Devel-Released status>`
+  #             }]
+  #           }
+  #       env:
+  #         SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL_TEST }}
+  #         VERSION: ${{ needs.versioninfo.outputs.packagejsonVersion }}-release${{ needs.versioninfo.outputs.nextGithubRunNumber }}
